@@ -26,7 +26,7 @@ export default function Nav() {
           <span className="grid h-8 w-8 place-items-center rounded-[8px] bg-terracotta text-white">
             <IconBed width={16} height={16} />
           </span>
-          Roomly
+          Stayloop
         </a>
         <ul className="hidden items-center gap-7 text-sm font-medium text-ink-soft md:flex">
           {LINKS.map((l) => (<li key={l.href}><a href={l.href} className="transition-colors hover:text-terracotta">{l.label}</a></li>))}

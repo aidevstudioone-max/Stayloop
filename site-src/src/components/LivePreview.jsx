@@ -9,7 +9,7 @@ export default function LivePreview() {
         <Reveal className="mx-auto mb-12 max-w-[54ch] text-center">
           <span className="mb-4 inline-block rounded-full bg-terracotta-light px-3.5 py-1.5 font-sans text-[.72rem] font-semibold uppercase tracking-[.07em] text-terracotta-dark">Live Preview</span>
           <h2 className="mb-4 font-display text-[clamp(1.8rem,3.6vw,2.5rem)] font-semibold leading-[1.15] tracking-tight">This isn't a mockup. It's the actual app.</h2>
-          <p className="text-[1.02rem] leading-relaxed text-ink-soft text-pretty">What you see below is Roomly running live — try the full thing yourself.</p>
+          <p className="text-[1.02rem] leading-relaxed text-ink-soft text-pretty">What you see below is Stayloop running live — try the full thing yourself.</p>
         </Reveal>
         <Reveal delay={0.1}>
           <motion.div whileHover={{ y: -4 }} className="overflow-hidden rounded-2xl border border-border bg-surface shadow-[0_30px_70px_-30px_rgba(156,75,31,.35)]">
@@ -17,10 +17,10 @@ export default function LivePreview() {
               <span className="h-2.5 w-2.5 rounded-full bg-[#e6b8a2]" />
               <span className="h-2.5 w-2.5 rounded-full bg-[#f0d6a8]" />
               <span className="h-2.5 w-2.5 rounded-full bg-[#b9d4bd]" />
-              <span className="ml-3 font-sans text-[.75rem] text-ink-soft">roomly.app/dashboard</span>
+              <span className="ml-3 font-sans text-[.75rem] text-ink-soft">stayloop.app/dashboard</span>
             </div>
             <div className="h-[420px] overflow-hidden md:h-[560px]">
-              <iframe src="app.html" title="Roomly live preview" loading="lazy" tabIndex={-1} aria-hidden="true" className="h-full w-full border-0" />
+              <iframe src="app.html" title="Stayloop live preview" loading="lazy" tabIndex={-1} aria-hidden="true" className="h-full w-full border-0" />
             </div>
           </motion.div>
           <div className="mt-8 text-center">

@@ -24,7 +24,7 @@ export default function Hero() {
             <motion.span {...rise(0.14)} className="block italic text-terracotta">always in sync.</motion.span>
           </h1>
           <motion.p {...rise(0.24)} className="mb-8 max-w-[46ch] text-[1.08rem] leading-relaxed text-ink-soft text-pretty">
-            Roomly gives small hotels and guesthouses real-time availability, an instant booking flow, and a dashboard that actually tells you what's happening today — no spreadsheets, no double-bookings.
+            Stayloop gives small hotels and guesthouses real-time availability, an instant booking flow, and a dashboard that actually tells you what's happening today — no spreadsheets, no double-bookings.
           </motion.p>
           <motion.div {...rise(0.32)} className="mb-9 flex flex-wrap gap-3">
             <a href="app.html" className="inline-flex items-center gap-2 rounded-lg bg-terracotta px-6 py-3.5 font-semibold text-white shadow-[0_10px_22px_rgba(193,98,45,.28)] transition-transform hover:-translate-y-0.5">

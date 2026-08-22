@@ -9,7 +9,7 @@ const ROOMS = [
 ];
 const TYPE_LABEL = { standard: "Standard", deluxe: "Deluxe", suite: "Suite" };
 
-const BOOKINGS_KEY = "roomly_bookings";
+const BOOKINGS_KEY = "stayloop_bookings";
 let currentSearch = null; // {checkIn, checkOut, guests}
 
 // ---------- Date helpers ----------
@@ -192,7 +192,7 @@ function openBookingModal(roomId) {
       showToast("Please fill in all fields with a valid email");
       return;
     }
-    confirmBooking(room, name, email, phone, nights, total);
+    openPaymentStep(room, name, email, phone, nights, total);
   });
 
   document.getElementById("modalOverlay").classList.add("open");
@@ -202,8 +202,143 @@ function closeBookingModal() {
   document.getElementById("modalOverlay").classList.remove("open");
 }
 
-function confirmBooking(room, name, email, phone, nights, total) {
+// ---------- Payment step ----------
+function openPaymentStep(room, name, email, phone, nights, total) {
+  document.getElementById("modalBody").innerHTML = `
+    <div class="modal-head">
+      <h3>Secure Payment</h3>
+      <button class="modal-close" id="modalCloseBtn"><svg class="icon"><use href="#icon-close"/></svg></button>
+    </div>
+    <div class="modal-summary">
+      <div class="row"><span>${room.name}</span><span>${nights} night${nights > 1 ? "s" : ""}</span></div>
+      <div class="row total"><span>Amount payable</span><span>${formatCurrency(total)}</span></div>
+    </div>
+    <div class="pay-methods" id="payMethods">
+      <button type="button" class="pay-method-tab active" data-method="card"><svg class="icon"><use href="#icon-cash"/></svg> Card</button>
+      <button type="button" class="pay-method-tab" data-method="upi"><svg class="icon"><use href="#icon-cash"/></svg> UPI</button>
+      <button type="button" class="pay-method-tab" data-method="netbanking"><svg class="icon"><use href="#icon-bank"/></svg> Net Banking</button>
+    </div>
+    <form id="paymentForm">
+      <div class="pay-panel active" data-panel="card">
+        <div class="form-stack">
+          <div class="field pay-input-wrap">
+            <label for="cardNumber">Card number</label>
+            <input type="text" id="cardNumber" inputmode="numeric" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number">
+            <span class="card-brand-badge" id="cardBrandBadge"></span>
+          </div>
+          <div class="field"><label for="cardName">Name on card</label><input type="text" id="cardName" placeholder="As printed on card" autocomplete="cc-name"></div>
+          <div class="pay-row-2">
+            <div class="field"><label for="cardExpiry">Expiry</label><input type="text" id="cardExpiry" inputmode="numeric" placeholder="MM/YY" maxlength="5" autocomplete="cc-exp"></div>
+            <div class="field"><label for="cardCvv">CVV</label><input type="password" id="cardCvv" inputmode="numeric" placeholder="•••" maxlength="3" autocomplete="cc-csc"></div>
+          </div>
+        </div>
+      </div>
+      <div class="pay-panel" data-panel="upi">
+        <div class="form-stack">
+          <div class="field"><label for="upiId">UPI ID</label><input type="text" id="upiId" placeholder="yourname@okhdfcbank"></div>
+          <p class="pay-hint">You'll get a payment request on your UPI app to approve.</p>
+        </div>
+      </div>
+      <div class="pay-panel" data-panel="netbanking">
+        <div class="form-stack">
+          <div class="field">
+            <label for="bankSelect">Select your bank</label>
+            <select id="bankSelect">
+              <option value="">Choose a bank</option>
+              <option>State Bank of India</option>
+              <option>HDFC Bank</option>
+              <option>ICICI Bank</option>
+              <option>Axis Bank</option>
+              <option>Kotak Mahindra Bank</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-outline btn-block" id="paymentBackBtn">Back</button>
+        <button type="submit" class="btn btn-primary btn-block pay-btn-pay" id="payBtn">
+          <span class="pay-btn-label">Pay ${formatCurrency(total)}</span>
+          <span class="spinner"><span class="spinner-ring"></span></span>
+        </button>
+      </div>
+      <div class="pay-trust"><svg class="icon"><use href="#icon-lock"/></svg> 256-bit encrypted · Secured by StayloopPay Gateway</div>
+    </form>`;
+
+  document.getElementById("modalCloseBtn").addEventListener("click", closeBookingModal);
+  document.getElementById("paymentBackBtn").addEventListener("click", () => openBookingModal(room.id));
+
+  let activeMethod = "card";
+  document.querySelectorAll(".pay-method-tab").forEach((tab) => {
+    tab.addEventListener("click", () => {
+      activeMethod = tab.dataset.method;
+      document.querySelectorAll(".pay-method-tab").forEach((t) => t.classList.toggle("active", t === tab));
+      document.querySelectorAll(".pay-panel").forEach((p) => p.classList.toggle("active", p.dataset.panel === activeMethod));
+    });
+  });
+
+  const cardNumberInput = document.getElementById("cardNumber");
+  const cardBrandBadge = document.getElementById("cardBrandBadge");
+  cardNumberInput.addEventListener("input", () => {
+    const digits = cardNumberInput.value.replace(/\D/g, "").slice(0, 16);
+    cardNumberInput.value = digits.replace(/(.{4})/g, "$1 ").trim();
+    const brand = digits.startsWith("4") ? "Visa" : digits.startsWith("5") ? "Mastercard" : digits.startsWith("6") ? "RuPay" : digits.startsWith("3") ? "Amex" : "";
+    cardBrandBadge.textContent = brand;
+    cardBrandBadge.classList.toggle("show", !!brand);
+  });
+  const cardExpiryInput = document.getElementById("cardExpiry");
+  cardExpiryInput.addEventListener("input", () => {
+    const digits = cardExpiryInput.value.replace(/\D/g, "").slice(0, 4);
+    cardExpiryInput.value = digits.length > 2 ? digits.slice(0, 2) + "/" + digits.slice(2) : digits;
+  });
+  document.getElementById("cardCvv").addEventListener("input", (e) => {
+    e.target.value = e.target.value.replace(/\D/g, "").slice(0, 3);
+  });
+
+  document.getElementById("paymentForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    let paymentDetail;
+    if (activeMethod === "card") {
+      const num = cardNumberInput.value.replace(/\s/g, "");
+      const expiry = cardExpiryInput.value;
+      const cvv = document.getElementById("cardCvv").value;
+      const cardName = document.getElementById("cardName").value.trim();
+      if (num.length !== 16 || !/^\d{2}\/\d{2}$/.test(expiry) || cvv.length !== 3 || !cardName) {
+        showToast("Please enter valid card details");
+        return;
+      }
+      paymentDetail = { method: "Card", display: `Card ending ${num.slice(-4)}` };
+    } else if (activeMethod === "upi") {
+      const upi = document.getElementById("upiId").value.trim();
+      if (!/^[\w.\-]+@[\w.\-]+$/.test(upi)) {
+        showToast("Please enter a valid UPI ID");
+        return;
+      }
+      paymentDetail = { method: "UPI", display: upi };
+    } else {
+      const bank = document.getElementById("bankSelect").value;
+      if (!bank) {
+        showToast("Please select your bank");
+        return;
+      }
+      paymentDetail = { method: "Net Banking", display: bank };
+    }
+
+    const payBtn = document.getElementById("payBtn");
+    payBtn.classList.add("loading");
+    payBtn.disabled = true;
+    setTimeout(() => {
+      confirmBooking(room, name, email, phone, nights, total, paymentDetail);
+    }, 1400);
+  });
+}
+
+function generateTransactionId() {
+  return "TXN" + Date.now().toString().slice(-8) + Math.floor(10 + Math.random() * 90);
+}
+
+function confirmBooking(room, name, email, phone, nights, total, paymentDetail) {
   const bookings = loadBookings();
+  const txnId = generateTransactionId();
   const booking = {
     id: generateBookingId(),
     roomId: room.id,
@@ -217,6 +352,9 @@ function confirmBooking(room, name, email, phone, nights, total) {
     totalPrice: total,
     status: "confirmed",
     createdAt: todayISO(),
+    paymentMethod: paymentDetail.method,
+    paymentDisplay: paymentDetail.display,
+    transactionId: txnId,
   };
   bookings.push(booking);
   saveBookings(bookings);
@@ -226,11 +364,17 @@ function confirmBooking(room, name, email, phone, nights, total) {
       <div class="confirm-icon"><svg class="icon"><use href="#icon-check"/></svg></div>
       <h3>Booking confirmed!</h3>
       <p>${room.name} is booked for ${name}, ${formatDate(booking.checkIn)} – ${formatDate(booking.checkOut)}. Booking ID ${booking.id}.</p>
+      <div class="pay-receipt">
+        <div class="row"><span>Paid via</span><span>${booking.paymentMethod} (${booking.paymentDisplay})</span></div>
+        <div class="row"><span>Transaction ID</span><span>${txnId}</span></div>
+        <div class="row"><span>Amount</span><span>${formatCurrency(total)}</span></div>
+        <div class="row muted"><span>Status</span><span style="color:var(--green); font-weight:700;">Paid</span></div>
+      </div>
       <button class="btn btn-primary btn-block" id="modalDoneBtn">Make Another Booking</button>
     </div>`;
   document.getElementById("modalDoneBtn").addEventListener("click", closeBookingModal);
 
-  showToast(`Booking confirmed for ${room.name}`);
+  showToast(`Payment successful — booking confirmed for ${room.name}`);
   renderRooms();
   renderBookingsView();
   renderDashboard();
