@@ -9,7 +9,7 @@ export default function Footer() {
           <a href="#preview" className="hover:text-terracotta">Live Preview</a>
           <a href="#pricing" className="hover:text-terracotta">Pricing</a>
         </div>
-        <p className="mt-4 text-[.76rem] text-ink-soft/80">© 2026 Stayloop. Demo product — no real bookings are processed, all data lives in your browser.</p>
+        <p className="mt-4 text-[.76rem] text-ink-soft/80">© 2026 Stayloop. Demo product by ठिkaana — no real bookings are processed, all data lives in your browser.</p>
       </div>
     </footer>
   )
